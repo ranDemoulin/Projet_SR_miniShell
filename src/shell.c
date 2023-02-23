@@ -12,7 +12,6 @@ int main()
 {
 	while (1) {
 		struct cmdline *l;
-		int i;
 
 		printf("shell> ");
 		l = readcmd();
@@ -29,31 +28,16 @@ int main()
 			continue;
 		}
 
-		for (i=0; l->seq[i]!=0; i++) {
-			char **cmd = l->seq[i];
-			if(!strcmp(cmd[0],"quit")){
-				printf("exit\n"); 
-				exit(0);	
-			}
-			if(fork()==0){
-				if(execvp(cmd[0],cmd) == -1){
-					printf("Commande Inconnue\n");
-				}
-			}else{
-				Wait(NULL);
-			}
-		}
-
-		/* Display each command of the pipe */
-		/* mise en évidence du découpage */
-		// for (i=0; l->seq[i]!=0; i++) {
-		// 	char **cmd = l->seq[i];
-		// 	printf("seq[%d]: ", i);
-		// 	printf("\n");
-		// 	for (j=0; cmd[j]!=0; j++) {	
-		// 		printf("w%d: %s ",j , cmd[j]);
-		// 	}
-		// 	printf("\n");
-		// }
+        char **cmd = l->seq[0]; //on recupere la commande et ses arguments vu que l'on a pas de pipe
+        if(!strcmp(cmd[0],"quit")){ //si la commande est quit on quitte le shell
+            exit(0);
+        }
+        if(fork()==0){ //on cree un fils pour executer la commande
+            if(execvp(cmd[0],cmd) == -1){ //si la commande n'existe pas on affiche un message d'erreur
+                printf("Commande Inconnue\n");
+            }
+        }else{
+            Wait(NULL); //on attend la fin de l'execution de la commande
+        }
 	}
 }
