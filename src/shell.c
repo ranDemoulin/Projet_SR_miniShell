@@ -12,7 +12,7 @@ int main()
 {
 	while (1) {
 		struct cmdline *l;
-		int i;
+		int i, new_in, new_out;
 
 		printf("shell> ");
 		l = readcmd();
@@ -40,13 +40,15 @@ int main()
 			}
 			if(fork()==0){
 				if (l->in){
-					dup2(stdin,l->in);
+					new_in=open(l->in,O_RDONLY);
+					dup2(new_in,0);
 				}
 				if (l->out){
-					dup2(stdout,l->out);
+					new_out=open(l->out ,O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+					dup2(new_out,1);
 				}
 				if(execvp(cmd[0],cmd) == -1){
-					printf("inco\n"); 
+					printf("Commande inconnue\n"); 
 				}
 			}else{
 				while(wait(NULL)>0);
