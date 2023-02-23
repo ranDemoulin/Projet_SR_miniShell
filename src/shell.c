@@ -29,9 +29,6 @@ int main()
 			continue;
 		}
 
-		if (l->in) printf("in: %s\n", l->in);
-		if (l->out) printf("out: %s\n", l->out);
-
 		for (i=0; l->seq[i]!=0; i++) {
 			char **cmd = l->seq[i];
 			if(!strcmp(cmd[0],"quit")){
@@ -39,17 +36,11 @@ int main()
 				exit(0);	
 			}
 			if(fork()==0){
-				if (l->in){
-					dup2(stdin,l->in);
-				}
-				if (l->out){
-					dup2(stdout,l->out);
-				}
 				if(execvp(cmd[0],cmd) == -1){
-					printf("inco\n"); 
+					printf("Commande Inconnue\n");
 				}
 			}else{
-				while(wait(NULL)>0);
+				Wait(NULL);
 			}
 		}
 
