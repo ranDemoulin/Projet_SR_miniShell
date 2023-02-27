@@ -29,11 +29,20 @@ int main()
 			continue;
 		}
 
-		if (l->in) printf("in: %s\n", l->in);
-		if (l->out) printf("out: %s\n", l->out);
+		/* Montre les redirection fichier du terminal */
+		// if (l->in) printf("in: %s\n", l->in);
+		// if (l->out) printf("out: %s\n", l->out);
 
 		for (i=0; l->seq[i]!=0; i++) {
 			char **cmd = l->seq[i];
+			// pour savoir pipe
+			if(l->seq[i+1]==NULL){
+				printf("rien\n");
+			}else{
+				printf("il y a suite\n");
+			}
+			// pour savoir pipe
+
 			if(!strcmp(cmd[0],"quit")){
 				printf("exit\n"); 
 				exit(0);	
@@ -41,14 +50,22 @@ int main()
 			if(fork()==0){
 				if (l->in){
 					new_in=open(l->in,O_RDONLY);
+					if(new_in == -1){
+						fprintf(stderr, "Error: %s: %s\n", l->in, strerror(errno));
+						exit(1);
+					}
 					dup2(new_in,0);
 				}
 				if (l->out){
-					new_out=open(l->out ,O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+					new_out=open(l->out ,O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+					if(new_out == -1){
+						fprintf(stderr, "Error: %s: %s\n", l->out, strerror(errno));
+						exit(1);
+					}
 					dup2(new_out,1);
 				}
 				if(execvp(cmd[0],cmd) == -1){
-					printf("Commande inconnue\n"); 
+					fprintf(stderr, "Error: %s: %s\n", cmd[0], "command not found");//demander a la prof pour strerror(errno)
 				}
 			}else{
 				while(wait(NULL)>0);
