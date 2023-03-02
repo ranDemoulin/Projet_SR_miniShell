@@ -26,9 +26,10 @@ void gere0pipe(char **cmd, int new_in, int new_out){
 }
 
 void geremidlecommande(int i,char **cmd,int** MatPipe, int new_in){
-    int fd[2];
-    pipe(fd);
-    MatPipe[i] = fd;
+    //int fd[2];
+    pipe(MatPipe[i]);
+    printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i][0],MatPipe[i][1]);
+    //MatPipe[i] = fd;
     if (Fork() == 0) { //on cree un fils qui va executer la commande
         Dup2(MatPipe[i][1], 1); //on redirige la sortie standard vers l'entré du pipe
         close(MatPipe[i][0]);
@@ -50,9 +51,7 @@ void geremidlecommande(int i,char **cmd,int** MatPipe, int new_in){
 }
 
 void gerefin(int i,char **cmd,int** MatPipe, int new_out){ //
-    int fd[2];
-    // pipe(fd);
-    MatPipe[i] = fd;
+    printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i-1][0],MatPipe[i-1][1]);
     if (fork() == 0) { //on cree un fils qui va executer la commande
         if(new_out){
             dup2(new_out, 1);
@@ -78,8 +77,9 @@ int main() {
         int i, new_in = 0, new_out = 0;
         char **cmd;
         int is_pipe = 0;
-        int* MatPipe[100]; //on va stocker les pipes dans un tableau de 100 pipes
-
+        int **MatPipe; //on va stocker les pipes dans un tableau de 100 pipes
+        
+        //allocation du tableau
 
         printf("shell> ");
         l = readcmd();
