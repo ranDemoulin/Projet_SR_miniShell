@@ -30,37 +30,44 @@ void geremidlecommande(int i,char **cmd,int** MatPipe, int new_in){
     pipe(fd);
     MatPipe[i] = fd;
     if (Fork() == 0) { //on cree un fils qui va executer la commande
-        Dup2(MatPipe[i][1], 1); //on redirige la sortie standard vers le pipe
+        Dup2(MatPipe[i][1], 1); //on redirige la sortie standard vers l'entré du pipe
+        close(MatPipe[i][0]);
         if (i!=0) {
-            if(new_in){dup2(new_in, 0);
+            Dup2(MatPipe[i-1][0], 0); //on redirige l'entree standard vers la sortie du pipe
+            close(MatPipe[i-1][1]);
+        }else{
+            if(new_in){
                 dup2(new_in, 0);
             }
-            Dup2(MatPipe[i-1][0], 0); //on redirige l'entree standard vers le pipe
         }
         if (execvp(cmd[i], cmd) == -1) {
             fprintf(stderr, "Error: %s: %s\n", cmd[i], strerror(errno));
             exit(1);
         }
     } else {
-        while (wait(NULL) > 0);
+        // while (wait(NULL) > 0);
     }
 }
 
 void gerefin(int i,char **cmd,int** MatPipe, int new_out){ //
     int fd[2];
-    pipe(fd);
+    // pipe(fd);
     MatPipe[i] = fd;
-    if (Fork() == 0) { //on cree un fils qui va executer la commande
+    if (fork() == 0) { //on cree un fils qui va executer la commande
         if(new_out){
             dup2(new_out, 1);
         }
-        Dup2(MatPipe[i-1][0], 0); //on redirige l'entree standard vers le pipe
+        Dup2(MatPipe[i-1][0], 0); //on redirige l'entree standard vers la sortie du pipe
+        close(MatPipe[i-1][1]);
         if (execvp(cmd[0], cmd) == -1) {
             fprintf(stderr, "Error: %s: %s\n", cmd[0], strerror(errno));
             exit(1);
         }
     } else {
-        while (wait(NULL) > 0);
+        // int test;
+        // do{
+        //     test = wait(NULL);
+        // }while (test > 0);
     }
 
 }
@@ -115,7 +122,6 @@ int main() {
             }
 
             if (i==0 && l->seq[i+1]==NULL){                 //si c'est le premier element de la sequence et le dernier
-                fprintf(stderr,"no pipe\n");
                 gere0pipe(cmd, new_in, new_out);
             }
             
@@ -132,9 +138,10 @@ int main() {
         if (is_pipe != 0){
         //on ferme tout les pipes
             for (i = 0; l->seq[i] != NULL; i++) {
-                close(MatPipe[i][0]);
                 close(MatPipe[i][1]);
+                close(MatPipe[i][0]);
             }
         }
+        while (wait(NULL) > 0);
     }
 }
