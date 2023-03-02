@@ -8,80 +8,120 @@
 #include "csapp.h"
 
 
-int main()
-{
-	while (1) {
-		struct cmdline *l;
-		int i, new_in, new_out;
+int main() {
+    while (1) {
+        struct cmdline *l;
+        int i, new_in, new_out;
+        char **cmd = l->seq[i];
+        int is_pipe = 0;
+        int* mat[100]; //on va stocker les pipes dans un tableau de 100 pipes
 
-		printf("shell> ");
-		l = readcmd();
 
-		/* If input stream closed, normal termination */
-		if (!l) {
-			printf("exit\n");
-			exit(0);
-		}
+        printf("shell> ");
+        l = readcmd();
 
-		if (l->err) {
-			/* Syntax error, read another command */
-			printf("error: %s\n", l->err);
-			continue;
-		}
 
-		/* Montre les redirection fichier du terminal */
-		// if (l->in) printf("in: %s\n", l->in);
-		// if (l->out) printf("out: %s\n", l->out);
+        /* If input stream closed, normal termination */
+        if (!l) {
+            printf("exit\n");
+            exit(0);
+        }
+        if (l->err) {
+            /* Syntax error, read another command */
+            printf("error: %s\n", l->err);
+            continue;
+        }
 
-		for (i=0; l->seq[i]!=0; i++) {
-			char **cmd = l->seq[i];
-			// pour savoir pipe
-			if(l->seq[i+1]==NULL){
-				printf("rien\n");
-			}else{
-				printf("il y a suite\n");
-			}
-			// pour savoir pipe
+        if (!strcmp(cmd[0], "quit")) {
+            printf("exit\n");
+            exit(0);
+        }
 
-			if(!strcmp(cmd[0],"quit")){
-				printf("exit\n"); 
-				exit(0);	
-			}
-			if(fork()==0){
-				if (l->in){
-					new_in=open(l->in,O_RDONLY);
-					if(new_in == -1){
-						fprintf(stderr, "Error: %s: %s\n", l->in, strerror(errno));
-						exit(1);
-					}
-					dup2(new_in,0);
-				}
-				if (l->out){
-					new_out=open(l->out ,O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
-					if(new_out == -1){
-						fprintf(stderr, "Error: %s: %s\n", l->out, strerror(errno));
-						exit(1);
-					}
-					dup2(new_out,1);
-				}
-				if(execvp(cmd[0],cmd) == -1){
-					fprintf(stderr, "Error: %s: %s\n", cmd[0], "command not found");//demander a la prof pour strerror(errno)
-				}
-			}else{
-				while(wait(NULL)>0);
-			}
-		}
 
-		/* Display each command of the pipe */
-		/* mise en évidence du découpage */
-		// for (i=0; l->seq[i]!=0; i++) {
-		// 	char **cmd = l->seq[i];
-		// 	printf("seq[%d]: ", i);
-		// 	printf("\n");
-		// 	for (j=0; cmd[j]!=0; j++) {	
-		// 		printf("w%d: %s ",j , cmd[j]);
-		// 	}
-		// 	printf("\n");
-		// }
-	}
+        if (l->in) {
+            new_in = open(l->in, O_RDONLY);
+            if (new_in == -1) {
+                fprintf(stderr, "Error: %s: %s\n", l->in, strerror(errno));
+                exit(1);
+            }
+            Dup2(new_in, 0);
+        }
+        if (l->out) {
+            new_out = Open(l->out, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+            if (new_out == -1) {
+                fprintf(stderr, "Error: %s: %s\n", l->out, strerror(errno));
+                exit(1);
+            }
+            Dup2(new_out, 1);
+        }
+
+
+
+
+        for (i = 0; l->seq[i] != 0; i++) {
+
+            if (!strcmp(cmd[0], "quit")) {
+                printf("exit\n");
+                is_pipe = 1;
+            }
+
+            if (i==0 && l->seq[i+1]==0)                                             //si c'est le premier element de la sequence et le dernier
+            {
+                if (Fork() == 0) { //on cree un fils qui va executer la commande
+                    if (execvp(cmd[0], cmd) == -1) {
+                        fprintf(stderr, "Error: %s: %s\n", cmd[0], strerror(errno));
+                        exit(1);
+                    }
+                } else {
+                    while (wait(NULL) > 0);
+                }
+            }
+
+
+            else if (l->seq[i+1]!=0)                                        //si c'est pas le dernier
+            {
+                is_pipe = 1;
+                int fd[2];
+                pipe(fd);
+                mat[i] = fd;
+                if (Fork() == 0) { //on cree un fils qui va executer la commande
+                    Dup2(mat[i][1], 1); //on redirige la sortie standard vers le pipe
+                    if (i!=0) {
+                        Dup2(mat[i-1][0], 0); //on redirige l'entree standard vers le pipe
+                    }
+                    if (execvp(cmd[i], cmd) == -1) {
+                        fprintf(stderr, "Error: %s: %s\n", cmd[i], strerror(errno));
+                        exit(1);
+                    }
+                } else {
+                    while (wait(NULL) > 0);
+                }
+            }
+
+
+            else
+            {
+                is_pipe = 1;
+                int fd[2];
+                pipe(fd);
+                mat[i] = fd;
+                if (Fork() == 0) { //on cree un fils qui va executer la commande
+                    Dup2(mat[i-1][0], 0); //on redirige l'entree standard vers le pipe
+                    if (execvp(cmd[0], cmd) == -1) {
+                        fprintf(stderr, "Error: %s: %s\n", cmd[0], strerror(errno));
+                        exit(1);
+                    }
+                } else {
+                    while (wait(NULL) > 0);
+                }
+            }
+        }
+        if (is_pipe != 0){
+        //on ferme tout les pipes
+            for (i = 0; l->seq[i] != 0; i++) {
+                Close(mat[i][0]);
+                Close(mat[i][1]);
+            }
+        }
+    }
 }
