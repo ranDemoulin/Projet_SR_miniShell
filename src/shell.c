@@ -1,14 +1,10 @@
-/*
- * Copyright (C) 2002, Simon Nieuviarts
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "readcmd.h"
 #include "csapp.h"
 
 //fonction pour 0 pipe
-void gere0pipe(char **cmd, int new_in, int new_out){
+void Aucun_pipes(char **cmd, int new_in, int new_out){
     if (Fork() == 0) { //on cree un fils qui va executer la commande
         if(new_in){
             dup2(new_in, 0);
@@ -20,8 +16,6 @@ void gere0pipe(char **cmd, int new_in, int new_out){
             fprintf(stderr, "Error: %s: %s\n", cmd[0], strerror(errno));
             exit(1);
         }
-    } else {
-        while (wait(NULL) > 0);
     }
 }
 
@@ -41,12 +35,10 @@ void geremidlecommande(int i,char **cmd,int** MatPipe, int new_in){
                 dup2(new_in, 0);
             }
         }
-        if (execvp(cmd[i], cmd) == -1) {
+        if (execvp(cmd[0], cmd) == -1) {
             fprintf(stderr, "Error: %s: %s\n", cmd[i], strerror(errno));
             exit(1);
         }
-    } else {
-        // while (wait(NULL) > 0);
     }
 }
 
@@ -62,13 +54,7 @@ void gerefin(int i,char **cmd,int** MatPipe, int new_out){ //
             fprintf(stderr, "Error: %s: %s\n", cmd[0], strerror(errno));
             exit(1);
         }
-    } else {
-        // int test;
-        // do{
-        //     test = wait(NULL);
-        // }while (test > 0);
     }
-
 }
 
 int main() {
@@ -80,12 +66,12 @@ int main() {
         int **MatPipe; //on va stocker les pipes dans un tableau
         printf("shell> ");
         l = readcmd();
-        for (j = 0; l->seq[j] != NULL; j++) {
+        for (j = 0; l->seq[j] != NULL; j++) { //on compte le nombre de commandes
         }
         if (j > 1) {
             is_pipe = 1;
             // allocation de la memoire pour le tableau de pipes
-            MatPipe = malloc(i*sizeof(int*));
+            MatPipe = malloc(j*sizeof(int*));
             for (i = 0; i < j; i++) {
                 MatPipe[i] = malloc(2*sizeof(int));
             }
@@ -126,7 +112,7 @@ int main() {
             }
 
             if (i==0 && l->seq[i+1]==NULL){                 //si c'est le premier element de la sequence et le dernier
-                gere0pipe(cmd, new_in, new_out);
+                Aucun_pipes(cmd, new_in, new_out);
             }
             
             else if (l->seq[i+1]!=NULL){                   //si c'est pas le dernier
@@ -139,13 +125,19 @@ int main() {
         }
         if (is_pipe != 0){
         //on ferme tout les pipes
-            for (i = 0; l->seq[i] != NULL; i++) {
+            for (i = 0; l->seq[i+1] != NULL; i++) {
                 // ici il y a un probleme de fermeture des pipes (pour les redirections probablement)
                 Close(MatPipe[i][1]);
                 Close(MatPipe[i][0]);
             }
         }
         while (wait(NULL) > 0);
-        free(l);
+        //on libere la memoire
+        if (is_pipe != 0){
+            for (i = 0; l->seq[i] != NULL; i++) {
+                free(MatPipe[i]);
+            }
+            free(MatPipe);
+        }
     }
 }
