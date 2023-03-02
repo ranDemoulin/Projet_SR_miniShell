@@ -74,15 +74,22 @@ void gerefin(int i,char **cmd,int** MatPipe, int new_out){ //
 int main() {
     while (1) {
         struct cmdline *l;
-        int i, new_in = 0, new_out = 0;
+        int i, j, new_in = 0, new_out = 0;
         char **cmd;
         int is_pipe = 0;
-        int **MatPipe; //on va stocker les pipes dans un tableau de 100 pipes
-        
-        //allocation du tableau
-
+        int **MatPipe; //on va stocker les pipes dans un tableau
         printf("shell> ");
         l = readcmd();
+        for (j = 0; l->seq[j] != NULL; j++) {
+        }
+        if (j > 1) {
+            is_pipe = 1;
+            // allocation de la memoire pour le tableau de pipes
+            MatPipe = malloc(i*sizeof(int*));
+            for (i = 0; i < j; i++) {
+                MatPipe[i] = malloc(2*sizeof(int));
+            }
+        }
         /* If input stream closed, normal termination */
         if (!l) {
             printf("exit\n");
@@ -97,7 +104,6 @@ int main() {
             printf("exit\n");
             exit(0);
         }
-
         if (l->in) {
             new_in = open(l->in, O_RDONLY);
             if (new_in == -1) {
@@ -112,8 +118,6 @@ int main() {
                 exit(1);
             }
         }
-
-
         for (i = 0; l->seq[i] != NULL; i++) {
             cmd=l->seq[i];
             if (!strcmp(cmd[0], "quit")) {
@@ -126,22 +130,22 @@ int main() {
             }
             
             else if (l->seq[i+1]!=NULL){                   //si c'est pas le dernier
-                is_pipe = 1;
                 geremidlecommande(i,cmd,MatPipe,new_in);
             }
             
             else{                                          //c'est une fin
-                is_pipe = 1;
                 gerefin(i,cmd,MatPipe, new_out);
             }
         }
         if (is_pipe != 0){
         //on ferme tout les pipes
             for (i = 0; l->seq[i] != NULL; i++) {
-                close(MatPipe[i][1]);
-                close(MatPipe[i][0]);
+                // ici il y a un probleme de fermeture des pipes (pour les redirections probablement)
+                Close(MatPipe[i][1]);
+                Close(MatPipe[i][0]);
             }
         }
         while (wait(NULL) > 0);
+        free(l);
     }
 }
