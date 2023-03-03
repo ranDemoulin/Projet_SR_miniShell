@@ -1,9 +1,14 @@
-#include "readcmd.h"
 #include "csapp.h"
+#include "pipe.h"
+
+extern sigset_t vide, masque_INT_TSTP;
 
 //fonction pour 0 pipe
 void Aucun_pipe(char **cmd, int new_in, int new_out){
     if (Fork() == 0) { //on cree un fils qui va executer la commande
+        
+        sigprocmask(SIG_UNBLOCK,&masque_INT_TSTP,NULL);
+
         if(new_in){
             dup2(new_in, 0);
         }
@@ -25,6 +30,9 @@ void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in){
     pipe(MatPipe[i]);
     printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i][0],MatPipe[i][1]);
     if (Fork() == 0) { //on cree un fils qui va executer la commande
+
+        sigprocmask(SIG_UNBLOCK,&masque_INT_TSTP,NULL);
+
         Dup2(MatPipe[i][1], 1); //on redirige la sortie standard vers l'entré du pipe
         Close(MatPipe[i][0]); //on ferme la lecture du pipe
         if (i!=0) {
@@ -45,6 +53,9 @@ void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in){
 void Fin(int i,char **cmd,int** MatPipe, int new_out){ //
     printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i-1][0],MatPipe[i-1][1]);
     if (fork() == 0) { //on cree un fils qui va executer la commande
+
+        sigprocmask(SIG_UNBLOCK,&masque_INT_TSTP,NULL);
+
         if(new_out){
             Dup2(new_out, 1);
         }

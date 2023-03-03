@@ -34,5 +34,5 @@ $(EXEC): $(OBJS)
 		$(CC) $(CFLAGS) $(OBJS) -o $(EXEC) $(LDFLAGS)
 
 clean:
-	rm -f shell *.o
+	rm -f $(EXEC) $(OBJPATH)/*.o
 
