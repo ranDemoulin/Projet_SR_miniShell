@@ -26,7 +26,6 @@ INCLUDE = $(wildcard $(HDRPATH)/*.c)
 EXEC=$(BINPATH)/shell
 
 all: $(EXEC)
-	./bin/shell
 
 $(OBJPATH)/%.o: $(SRCPATH)/%.c
 		$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
