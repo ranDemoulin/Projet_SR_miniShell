@@ -3,26 +3,36 @@
 # Disable implicit rules
 .SUFFIXES:
 
+# Variable pour compilation
 CC=gcc
 CFLAGS=-Wall -g
-VPATH=src/
+CPPFLAGS = -I$(HDRPATH)
 
 # Note: -lnsl does not seem to work on Mac OS but will
 # probably be necessary on Solaris for linking network-related functions 
 #LIBS += -lsocket -lnsl -lrt
 LIBS+=-lpthread
 
-INCLUDE = readcmd.h csapp.h
-OBJS = readcmd.o csapp.o
-INCLDIR = -I.
+# Variable pour chemin
+BINPATH=bin
+SRCPATH=source
+HDRPATH=header
+OBJPATH=objet
 
-all: shell
+# Variable pour les cibles et la récupération des fichiers
+SRCS=$(wildcard $(SRCPATH)/*.c)
+OBJS=$(SRCS:$(SRCPATH)/%.c=$(OBJPATH)/%.o)
+INCLUDE = $(wildcard $(HDRPATH)/*.c)
+EXEC=$(BINPATH)/shell
 
-%.o: %.c $(INCLUDE)
-	$(CC) $(CFLAGS) $(INCLDIR) -c -o $@ $<
+all: $(EXEC)
+	./bin/shell
 
-%: %.o $(OBJS)
-	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+$(OBJPATH)/%.o: $(SRCPATH)/%.c
+		$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+$(EXEC): $(OBJS)
+		$(CC) $(CFLAGS) $(OBJS) -o $(EXEC) $(LDFLAGS)
 
 clean:
 	rm -f shell *.o
