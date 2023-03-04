@@ -2,6 +2,7 @@
 #include "pipe.h"
 
 extern sigset_t vide, masque_INT_TSTP;
+// extern process *p;
 
 //fonction pour 0 pipe
 void Aucun_pipe(char **cmd, int new_in, int new_out, process *tab_process, int background){
@@ -32,7 +33,6 @@ void Aucun_pipe(char **cmd, int new_in, int new_out, process *tab_process, int b
 }
 
 void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, process *tab_process, int background){
-    pid_t pid;
     pipe(MatPipe[i]);
 
     printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i][0],MatPipe[i][1]);

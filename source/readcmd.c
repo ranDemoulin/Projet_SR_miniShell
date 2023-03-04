@@ -185,14 +185,19 @@ struct cmdline *readcmd(void){
 	s->err = 0;
 	s->in = 0;
 	s->out = 0;
+	s->background = 0;
 	s->seq = 0;
 
 	i = 0;
 	while ((w = words[i++]) != 0) {
 		switch (w[0]) {
 			case '&':
-					s->err = "& was here";
-					goto error;
+					if (words[i] != 0) {
+						s->err = "& has to be last character of the command line";
+						goto error;
+					}else{
+					s->background = 1;
+					}
 				break;
 
 			case '<':
