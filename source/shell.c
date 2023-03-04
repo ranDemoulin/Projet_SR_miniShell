@@ -51,9 +51,13 @@ int main() {
     sigaddset(&masque_INT_TSTP,SIGINT);
     sigaddset(&masque_INT_TSTP,SIGTSTP);
 
+    Signal(SIGINT, CTRL_C_handler);
+    Signal(SIGTSTP, CTRL_Z_handler);
+    Signal(SIGCHLD, child_handler);
+
     while (1) {
         struct cmdline *l;
-        int i, j, new_in = 0, new_out = 0;
+        int i, j, new_in = 0, new_out = 0, bg = 0;
         char **cmd;
         int is_pipe = 0;
         int **MatPipe; //on va stocker les pipes dans un tableau
@@ -62,10 +66,6 @@ int main() {
 
         printf("shell> ");
         l = readcmd();
-
-        Signal(SIGINT, CTRL_C_handler);
-        Signal(SIGTSTP, CTRL_Z_handler);
-        Signal(SIGCHLD, child_handler);
 
         for (j = 0; l->seq[j] != NULL; j++) { //on compte le nombre de commandes
         }
@@ -136,13 +136,14 @@ int main() {
 
                 if (i == 0 &&
                     l->seq[i + 1] == NULL) {                 //si c'est le premier element de la sequence et le dernier
-                    Aucun_pipe(cmd, new_in, new_out, p);
+                    Aucun_pipe(cmd, new_in, new_out, p, bg);
                 } else if (l->seq[i + 1] != NULL) {                   //si c'est pas le dernier
-                    Debut_Milieu(i, cmd, MatPipe, new_in, p);
+                    Debut_Milieu(i, cmd, MatPipe, new_in, p, bg);
                 } else {                                          //c'est une fin
-                    Fin(i, cmd, MatPipe, new_out, p);
+                    Fin(i, cmd, MatPipe, new_out, p, bg);
                 }
             }
+
             if (is_pipe != 0) {
                 //on ferme tout les pipes
                 for (i = 0; l->seq[i + 1] != NULL; i++) {
@@ -150,6 +151,7 @@ int main() {
                     Close(MatPipe[i][0]);
                 }
             }
+
             //tant que tous les processus au premier plan ne sont pas termines
             while (1) {
                 int is_done = 1;
@@ -162,6 +164,7 @@ int main() {
                     break;
                 }
             }
+
             //on libere la memoire
             if (is_pipe != 0) {
                 for (i = 0; l->seq[i] != NULL; i++) {

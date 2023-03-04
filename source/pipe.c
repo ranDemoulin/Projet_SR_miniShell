@@ -4,7 +4,7 @@
 extern sigset_t vide, masque_INT_TSTP;
 
 //fonction pour 0 pipe
-void Aucun_pipe(char **cmd, int new_in, int new_out, process *tab_process){
+void Aucun_pipe(char **cmd, int new_in, int new_out, process *tab_process, int background){
     if (Fork() == 0) { //on cree un fils qui va executer la commande
         
         sigprocmask(SIG_UNBLOCK,&masque_INT_TSTP,NULL);
@@ -31,10 +31,12 @@ void Aucun_pipe(char **cmd, int new_in, int new_out, process *tab_process){
     }
 }
 
-void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, process *tab_process){
+void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, process *tab_process, int background){
     pid_t pid;
     pipe(MatPipe[i]);
+
     printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i][0],MatPipe[i][1]);
+
     if (Fork() == 0) { //on cree un fils qui va executer la commande
 
         sigprocmask(SIG_UNBLOCK,&masque_INT_TSTP,NULL);
@@ -61,8 +63,10 @@ void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, process *tab_proce
     Close(MatPipe[i][1]); //on ferme l'ecriture du pipe
 }
 
-void Fin(int i,char **cmd,int** MatPipe, int new_out ,process *tab_process){
+void Fin(int i,char **cmd,int** MatPipe, int new_out ,process *tab_process, int background){
+
     printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i-1][0],MatPipe[i-1][1]);
+
     if (Fork() == 0) { //on cree un fils qui va executer la commande
 
         sigprocmask(SIG_UNBLOCK,&masque_INT_TSTP,NULL);

@@ -15,14 +15,14 @@ typedef struct process {
 } process;
 
 // Fonction créant un fils lorsque il y a une seule commande 
-void Aucun_pipe(char **cmd, int new_in, int new_out, process *tab_process);
+void Aucun_pipe(char **cmd, int new_in, int new_out, process *tab_process, int background);
 
 
 // Fonction gérant les fils et les tubes lorsque il y a une suite de commandes
-void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, process *tab_process);
+void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, process *tab_process, int background);
 
 
 // Fonction gérant le dernier fils lorsque il y a une suite de commandes
-void Fin(int i,char **cmd,int** MatPipe, int new_out, process *tab_process);
+void Fin(int i,char **cmd,int** MatPipe, int new_out, process *tab_process, int background);
 
 #endif

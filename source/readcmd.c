@@ -190,49 +190,57 @@ struct cmdline *readcmd(void){
 	i = 0;
 	while ((w = words[i++]) != 0) {
 		switch (w[0]) {
-		case '<':
-			/* Tricky : the word can only be "<" */
-			if (s->in) {
-				s->err = "only one input file supported";
-				goto error;
-			}
-			if (words[i] == 0) {
-				s->err = "filename missing for input redirection";
-				goto error;
-			}
-			s->in = words[i++];
-			break;
-		case '>':
-			/* Tricky : the word can only be ">" */
-			if (s->out) {
-				s->err = "only one output file supported";
-				goto error;
-			}
-			if (words[i] == 0) {
-				s->err = "filename missing for output redirection";
-				goto error;
-			}
-			s->out = words[i++];
-			break;
-		case '|':
-			/* Tricky : the word can only be "|" */
-			if (cmd_len == 0) {
-				s->err = "misplaced pipe";
-				goto error;
-			}
+			case '&':
+					s->err = "& was here";
+					goto error;
+				break;
 
-			seq = xrealloc(seq, (seq_len + 2) * sizeof(char **));
-			seq[seq_len++] = cmd;
-			seq[seq_len] = 0;
+			case '<':
+				/* Tricky : the word can only be "<" */
+				if (s->in) {
+					s->err = "only one input file supported";
+					goto error;
+				}
+				if (words[i] == 0) {
+					s->err = "filename missing for input redirection";
+					goto error;
+				}
+				s->in = words[i++];
+				break;
 
-			cmd = xmalloc(sizeof(char *));
-			cmd[0] = 0;
-			cmd_len = 0;
-			break;
-		default:
-			cmd = xrealloc(cmd, (cmd_len + 2) * sizeof(char *));
-			cmd[cmd_len++] = w;
-			cmd[cmd_len] = 0;
+			case '>':
+				/* Tricky : the word can only be ">" */
+				if (s->out) {
+					s->err = "only one output file supported";
+					goto error;
+				}
+				if (words[i] == 0) {
+					s->err = "filename missing for output redirection";
+					goto error;
+				}
+				s->out = words[i++];
+				break;
+
+			case '|':
+				/* Tricky : the word can only be "|" */
+				if (cmd_len == 0) {
+					s->err = "misplaced pipe";
+					goto error;
+				}
+
+				seq = xrealloc(seq, (seq_len + 2) * sizeof(char **));
+				seq[seq_len++] = cmd;
+				seq[seq_len] = 0;
+
+				cmd = xmalloc(sizeof(char *));
+				cmd[0] = 0;
+				cmd_len = 0;
+				break;
+
+			default:
+				cmd = xrealloc(cmd, (cmd_len + 2) * sizeof(char *));
+				cmd[cmd_len++] = w;
+				cmd[cmd_len] = 0;
 		}
 	}
 
@@ -249,6 +257,7 @@ struct cmdline *readcmd(void){
 	free(words);
 	s->seq = seq;
 	return s;
+
 error:
 	while ((w = words[i++]) != 0) {
 		switch (w[0]) {
