@@ -3,6 +3,8 @@
 #include "readcmd.h"
 #include "csapp.h"
 
+int nb_processus = 0;
+
 //fonction pour 0 pipe
 void Aucun_pipe(char **cmd, int new_in, int new_out){
     if (Fork() == 0) { //on cree un fils qui va executer la commande
@@ -32,6 +34,7 @@ void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in){
                 dup2(new_in, 0);
             }
         }
+        nb_processus++;
         if (execvp(cmd[0], cmd) == -1) {
             fprintf(stderr, "Error: %s: %s\n", cmd[i], strerror(errno));
             exit(1);
@@ -105,7 +108,22 @@ int main() {
             cmd=l->seq[i];
             if (!strcmp(cmd[0], "quit")) {
                 printf("exit\n");
-                is_pipe = 1;
+                while (wait(NULL) > 0);
+                if (is_pipe != 0){
+                    //on ferme tout les pipes
+                    for (i = 0; i < nb_processus; i++) {
+                        // ici il y a un probleme de fermeture des pipes (pour les redirections probablement)
+                        Close(MatPipe[i][0]);
+                    }
+                }
+                //on libere la memoire
+                if (is_pipe != 0){
+                    for (i = 0; l->seq[i] != NULL; i++) {
+                        free(MatPipe[i]);
+                    }
+                    free(MatPipe);
+                }
+                exit(0);
             }
 
             if (i==0 && l->seq[i+1]==NULL){                 //si c'est le premier element de la sequence et le dernier
@@ -120,6 +138,7 @@ int main() {
                 Fin(i,cmd,MatPipe, new_out);
             }
         }
+        while (wait(NULL) > 0);
         if (is_pipe != 0){
         //on ferme tout les pipes
             for (i = 0; l->seq[i+1] != NULL; i++) {
@@ -127,7 +146,6 @@ int main() {
                 Close(MatPipe[i][0]);
             }
         }
-        while (wait(NULL) > 0);
         //on libere la memoire
         if (is_pipe != 0){
             for (i = 0; l->seq[i] != NULL; i++) {
