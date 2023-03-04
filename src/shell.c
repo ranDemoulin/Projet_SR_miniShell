@@ -3,6 +3,8 @@
 #include "readcmd.h"
 #include "csapp.h"
 
+int nbpipe = 0;
+
 //fonction pour 0 pipe
 void Aucun_pipe(char **cmd, int new_in, int new_out){
     if (Fork() == 0) { //on cree un fils qui va executer la commande
@@ -43,7 +45,7 @@ void Debut_Milieu_Fin( struct cmdline *l,int** MatPipe, int new_in, int new_out)
             Close(MatPipe[i][0]);
         }
         //on libere la memoire
-        for (int i = 0; l->seq[i] != NULL; i++) {
+        for (int i = 0; i < nbpipe; i++) {
             free(MatPipe[i]);
         }
         free(MatPipe);
