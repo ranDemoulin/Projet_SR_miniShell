@@ -119,7 +119,6 @@ int main() {
             if (is_pipe != 0) {
                 //on ferme tout les pipes
                 for (int i = 0; l->seq[i + 1] != NULL; i++) {
-                    // ici il y a un probleme de fermeture des pipes (pour les redirections probablement)
                     Close(MatPipe[i][0]);
                 }
             }
