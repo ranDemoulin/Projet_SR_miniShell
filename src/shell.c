@@ -23,7 +23,6 @@ void Aucun_pipe(char **cmd, int new_in, int new_out){
 
 void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in){
     pipe(MatPipe[i]);
-    printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i][0],MatPipe[i][1]);
     if (Fork() == 0) { //on cree un fils qui va executer la commande
         Dup2(MatPipe[i][1], 1); //on redirige la sortie standard vers l'entré du pipe
         Close(MatPipe[i][0]); //on ferme la lecture du pipe
@@ -44,7 +43,6 @@ void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in){
 }
 
 void Fin(int i,char **cmd,int** MatPipe, int new_out){ //
-    printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i-1][0],MatPipe[i-1][1]);
     if (fork() == 0) { //on cree un fils qui va executer la commande
         if(new_out){
             Dup2(new_out, 1);
@@ -94,14 +92,14 @@ int main() {
             new_in = open(l->in, O_RDONLY);
             if (new_in == -1) {
                 fprintf(stderr, "Error: %s: %s\n", l->in, strerror(errno));
-                exit(1);
+                continue;
             }
         }
         if (l->out) {
-            new_out = open(l->out, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+            new_out = open(l->out, O_TRUNC | O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
             if (new_out == -1) {
                 fprintf(stderr, "Error: %s: %s\n", l->out, strerror(errno));
-                exit(1);
+                continue;
             }
         }
         for (i = 0; l->seq[i] != NULL; i++) {
