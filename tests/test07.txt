@@ -1,0 +1,4 @@
+#
+# test07.txt - Tester un tube
+#
+ls -l | wc -l

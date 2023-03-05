@@ -1,0 +1,5 @@
+#
+# test09.txt - Tester plusieurs tubes avec redirection
+#
+ls > tmp.txt
+grep test < tmp.txt | wc > tmp2.txt  

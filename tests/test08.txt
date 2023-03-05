@@ -1,0 +1,4 @@
+#
+# test08.txt - Tester plusieurs tubes
+#
+ls -l | grep x | wc -l | wc

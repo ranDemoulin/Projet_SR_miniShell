@@ -1,0 +1,4 @@
+#
+# test05.txt - Tester une commande avec des arguments
+#
+echo bonjour

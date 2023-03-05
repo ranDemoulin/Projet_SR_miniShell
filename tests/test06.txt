@@ -1,0 +1,7 @@
+#
+# test06.txt - Tester les redirections d'E/S
+#
+ls > tmp.txt
+wc < tmp.txt
+grep r < tmp.txt > tmp2.txt
+echo cool > tmp.txt
