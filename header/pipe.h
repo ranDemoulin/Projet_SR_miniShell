@@ -9,10 +9,10 @@
 // 1: le processus est en pause
 // 0: le processus est termine
 // si le processus est en arriere plan on affiche l'etat en negatif
-typedef struct process {
-    pid_t pid;
-    int etat;
-} process;
+// typedef struct process {
+//     pid_t pid;
+//     int etat;
+// } process;
 
 // Fonction créant un fils lorsque il y a une seule commande 
 void Aucun_pipe(char **cmd, int new_in, int new_out, process *tab_process, int background);

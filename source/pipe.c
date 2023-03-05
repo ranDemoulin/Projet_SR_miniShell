@@ -1,4 +1,5 @@
 #include "csapp.h"
+#include "gest_job.h"
 #include "pipe.h"
 
 sigset_t mask_vide, mask_all, mask_INT_TSTP, mask_CHLD, mask_tmp;
@@ -32,25 +33,20 @@ void Aucun_pipe(char **cmd, int new_in, int new_out, process *tab_process, int b
     }
     // Mise en liste du job
     Sigprocmask(SIG_BLOCK, &mask_all, NULL);
-    tab_process[nb_prc].pid = pid;
-    tab_process[nb_prc].etat = 2;
-    if (background) {
-        tab_process[nb_prc].etat = -2;
-    }
-    nb_prc++;
+    addjob(pid, tab_process, background);
     Sigprocmask(SIG_SETMASK, &mask_tmp, NULL); // On debloque SIGCHLD
 
 }
 
 void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, process *tab_process, int background){
     pid_t pid;
-    printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i][0],MatPipe[i][1]);
     
     // On debloque les CTRL C et Z
     sigprocmask(SIG_UNBLOCK,&mask_INT_TSTP,NULL);
 
     // Création tube
     pipe(MatPipe[i]);
+    printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i][0],MatPipe[i][1]);
 
      // On bloque SIDCHLD
     Sigprocmask(SIG_BLOCK, &mask_CHLD, &mask_tmp);
@@ -74,12 +70,7 @@ void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, process *tab_proce
     }
     // Mise en liste du job
     Sigprocmask(SIG_BLOCK, &mask_all, NULL);
-    tab_process[nb_prc].pid = pid;
-    tab_process[nb_prc].etat = 2;
-    if (background) {
-        tab_process[nb_prc].etat = -2;
-    }
-    nb_prc++;
+    addjob(pid, tab_process, background);
     Sigprocmask(SIG_SETMASK, &mask_tmp, NULL); // On debloque SIGCHLD
 
     Close(MatPipe[i][1]); //on ferme l'ecriture du pipe
@@ -87,7 +78,6 @@ void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, process *tab_proce
 
 void Fin(int i,char **cmd,int** MatPipe, int new_out ,process *tab_process, int background){
     pid_t pid;
-    printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i-1][0],MatPipe[i-1][1]);
 
     // On debloque les CTRL C et Z
     sigprocmask(SIG_UNBLOCK,&mask_INT_TSTP,NULL);
@@ -108,11 +98,6 @@ void Fin(int i,char **cmd,int** MatPipe, int new_out ,process *tab_process, int 
     }
     // Mise en liste du job
     Sigprocmask(SIG_BLOCK, &mask_all, NULL);
-    tab_process[nb_prc].pid = pid;
-    tab_process[nb_prc].etat = 2;
-    if (background) {
-        tab_process[nb_prc].etat = -2;
-    }
-    nb_prc++;
+    addjob(pid, tab_process, background);
     Sigprocmask(SIG_SETMASK, &mask_tmp, NULL); // On debloque SIDCHLD
 }

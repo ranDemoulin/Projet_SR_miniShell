@@ -63,12 +63,12 @@ int main() {
     Signal(SIGTSTP, CTRL_Z_handler);
     Signal(SIGCHLD, child_handler);
 
-            // Initialisation du tableau de processus (jobs)
-            p = malloc(100 * sizeof(process));
-            for (int i = 0; i < 100; i++) {
-                p[i].pid = 0;
-                p[i].etat = 0;
-            }
+    // Initialisation du tableau de processus (jobs)
+    p = malloc(100 * sizeof(process));
+    for (int i = 0; i < 100; i++) {
+        p[i].pid = 0;
+        p[i].etat = 0;
+    }
 
     while (1) {
         struct cmdline *l;
