@@ -41,7 +41,6 @@ void Debut_Milieu_Fin( struct cmdline *l,int** MatPipe, int new_in, int new_out)
         while (wait(NULL) > 0);
         //on ferme tout les pipes
         for (int i = 0; l->seq[i + 1] != NULL; i++) {
-            // ici il y a un probleme de fermeture des pipes (pour les redirections probablement)
             Close(MatPipe[i][0]);
         }
         //on libere la memoire
