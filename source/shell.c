@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "gest_job.h"
 #include "readcmd.h"
 #include "csapp.h"
 #include "pipe.h"
@@ -32,12 +33,7 @@ void child_handler(int sig){
     while ((pid = waitpid(-1, &status,WNOHANG)) > 0) {
         //actualiser le tableau de processus
         Sigprocmask(SIG_BLOCK, &mask_all, &mask_tmp);
-        for (int i = 0; i < nb_prc; i++) {
-            if (p[i].pid == pid) {
-                nb_prc--;
-                p[i].etat = 0;
-            }
-        }
+        removejob(pid, p);
         Sigprocmask(SIG_SETMASK, &mask_tmp, NULL);
     }
     if (errno != ECHILD && errno != EXIT_SUCCESS)
@@ -105,12 +101,11 @@ int main() {
             // allocation de la memoire pour le tableau de pipes
             if (j > 1) {
                 is_pipe = 1;
-                MatPipe = malloc(j * sizeof(int *));
-                for (i = 0; i < j; i++) {
-                    MatPipe[i] = malloc(2 * sizeof(int));
+                MatPipe = Malloc((j-1) * sizeof(int *));
+                for (i = 0; i < j-1; i++) {
+                    MatPipe[i] = Malloc(2 * sizeof(int));
                 }
             }
-
 
             if (!strcmp(l->seq[0][0], "quit")) {
                 printf("exit\n");
@@ -137,34 +132,22 @@ int main() {
                 cmd = l->seq[i];
                 if (!strcmp(cmd[0], "quit")) {
                     printf("exit\n");
-                    is_pipe = 1;
+                    for (i = 0; p[i].pid != 0; i++) {
+                        if (p[i].etat != 0) {
+                            kill(p[i].pid, SIGKILL);
+                        }
+                    }
+                    exit(0);
                 }
 
                 if (i == 0 && l->seq[i + 1] == NULL) {             //si c'est le premier element de la sequence et le dernier
                     Aucun_pipe(cmd, new_in, new_out, p, bg);
-                } else if (l->seq[i + 1] != NULL) {               //si c'est pas le dernier 
+                } else if (l->seq[i + 1] != NULL) {               //si c'est pas le dernier
                     Debut_Milieu(i, cmd, MatPipe, new_in, p, bg);
                 } else {                                          //c'est une fin
                     Fin(i, cmd, MatPipe, new_out, p, bg);
                 }
             }
-
-            if (is_pipe != 0) {
-                //on ferme tout les pipes
-                for (i = 0; l->seq[i + 1] != NULL; i++) {
-                    // ici on ne ferme la sortie du tube car l'entré est fermée avant
-                    Close(MatPipe[i][0]);
-                }
-            }
-
-            //on libere la memoire
-            if (is_pipe != 0) {
-                for (i = 0; l->seq[i] != NULL; i++) {
-                    free(MatPipe[i]);
-                }
-                free(MatPipe);
-            }
-
             //tant que tous les processus au premier plan ne sont pas termines
             while (1) {
                 int is_done = 1;
@@ -177,6 +160,20 @@ int main() {
                     break;
                 }
             }
+
+            //on libere la memoire
+            if (is_pipe != 0) {
+                //on ferme tout les pipes
+                for (i = 0; l->seq[i + 1] != NULL; i++) {
+                    // ici on ne ferme la sortie du tube car l'entré est fermée avant
+                    Close(MatPipe[i][0]);
+                }
+                for (i = 0; l->seq[i] != NULL; i++) {
+                    free(MatPipe[i]);
+                }
+                free(MatPipe);
+            }
         }
     }
+    free(p);
 }

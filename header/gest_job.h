@@ -18,4 +18,8 @@ typedef struct process {
 
 void addjob(pid_t pid, process *tab_process , int bg);
 
+void removejob(pid_t pid, process *tab_process);
+
+void initjob(process *tab_process);
+
 #endif

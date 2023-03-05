@@ -35,7 +35,6 @@ void Aucun_pipe(char **cmd, int new_in, int new_out, process *tab_process, int b
     Sigprocmask(SIG_BLOCK, &mask_all, NULL);
     addjob(pid, tab_process, background);
     Sigprocmask(SIG_SETMASK, &mask_tmp, NULL); // On debloque SIGCHLD
-
 }
 
 void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, process *tab_process, int background){
