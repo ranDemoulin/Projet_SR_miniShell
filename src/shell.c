@@ -100,14 +100,14 @@ int main() {
                 new_in = open(l->in, O_RDONLY);
                 if (new_in == -1) {
                     fprintf(stderr, "Error: %s: %s\n", l->in, strerror(errno));
-                    exit(1);
+                    continue;
                 }
             }
             if (l->out) {
-                new_out = open(l->out, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+                new_out = open(l->out, O_TRUNC | O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
                 if (new_out == -1) {
                     fprintf(stderr, "Error: %s: %s\n", l->out, strerror(errno));
-                    exit(1);
+                    continue;
                 }
             }
             if (j == 1) {
