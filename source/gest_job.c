@@ -46,5 +46,12 @@ void initjob(){
 }
 
 void endjob(){
-    free(tab_process);
+    process *current_prc = tab_process->head; 
+    process *tmp;
+    while (current_prc != NULL) {
+        tmp=current_prc;
+        current_prc=current_prc->next;
+        Free(tmp);
+    }
+    Free(tab_process);
 }

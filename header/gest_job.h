@@ -6,9 +6,9 @@
 
 //struct process qui stocke les pid, les etats et les commandes avec foreground ou background
 //les etats sont definis comme suit:
-// 2: le processus est en cours d'execution
-// 1: le processus est en pause
-// 0: le processus est termine
+//  2: le processus est en cours d'execution
+// -1: le processus est en pause
+//  0: le processus est termine
 // si le processus est en arriere plan on affiche l'etat en negatif
 typedef struct process_ {
     pid_t pid;

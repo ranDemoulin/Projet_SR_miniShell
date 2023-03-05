@@ -25,7 +25,7 @@ void CTRL_Z_handler(int sig){
     while (test_prc!=NULL){
         if (test_prc->etat == 2) {
             Kill(test_prc->pid, SIGTSTP);
-            test_prc->etat = 0;
+            test_prc->etat = -1;
         }
         test_prc=test_prc->next;
     }
@@ -158,12 +158,16 @@ int main() {
             while (1) {
                 int is_done = 1;
                 process *test_prc = tab_process->head;
-                while (test_prc!=NULL){
+
+                // On bloque SIGCHLD pour eviter que le test se fasse sans problème (libération du process entre whie et if)
+                Sigprocmask(SIG_BLOCK, &mask_CHLD, &mask_tmp);
+                while (test_prc!=NULL){ 
                     if (test_prc->etat > 0) {
                         is_done = 0;
                     }
                     test_prc=test_prc->next;
                 }
+                Sigprocmask(SIG_SETMASK, &mask_tmp, NULL);   
                 if (is_done == 1) {
                     break;
                 }
