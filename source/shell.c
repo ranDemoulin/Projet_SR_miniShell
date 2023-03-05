@@ -7,23 +7,27 @@
 
 sigset_t mask_vide, mask_all, mask_INT_TSTP, mask_CHLD, mask_tmp;
 int nb_prc;
-process *p;
+L_process *tab_process;
 
 void CTRL_C_handler(int sig){
-    for (int i = 0; p[i].pid != 0; i++) {
-        if (p[i].etat == 2) {
-            kill(p[i].pid, SIGKILL);
-            p[i].etat = 0;
+    process *test_prc = tab_process->head;
+    while (test_prc!=NULL){
+        if (test_prc->etat == 2) {
+            Kill(test_prc->pid, SIGINT);
+            test_prc->etat = 0;
         }
+        test_prc=test_prc->next;
     }
 }
 
 void CTRL_Z_handler(int sig){
-    for (int i = 0; p[i].pid != 0; i++) {
-        if (p[i].etat == 2) {
-            kill(p[i].pid, SIGSTOP);
-            p[i].etat = -1;
+    process *test_prc = tab_process->head;
+    while (test_prc!=NULL){
+        if (test_prc->etat == 2) {
+            Kill(test_prc->pid, SIGTSTP);
+            test_prc->etat = 0;
         }
+        test_prc=test_prc->next;
     }
 }
 
@@ -33,7 +37,7 @@ void child_handler(int sig){
     while ((pid = waitpid(-1, &status,WNOHANG)) > 0) {
         //actualiser le tableau de processus
         Sigprocmask(SIG_BLOCK, &mask_all, &mask_tmp);
-        removejob(pid, p);
+        removejob(pid);
         Sigprocmask(SIG_SETMASK, &mask_tmp, NULL);
     }
     if (errno != ECHILD && errno != EXIT_SUCCESS)
@@ -59,12 +63,8 @@ int main() {
     Signal(SIGTSTP, CTRL_Z_handler);
     Signal(SIGCHLD, child_handler);
 
-    // Initialisation du tableau de processus (jobs)
-    p = malloc(100 * sizeof(process));
-    for (int i = 0; i < 100; i++) {
-        p[i].pid = 0;
-        p[i].etat = 0;
-    }
+    initjob();
+
 
     while (1) {
         struct cmdline *l;
@@ -73,7 +73,7 @@ int main() {
         int is_pipe = 0;
         int **MatPipe; //on va stocker les pipes dans un tableau
 
-        sigprocmask(SIG_BLOCK, &mask_INT_TSTP, &mask_tmp);
+        Sigprocmask(SIG_BLOCK, &mask_INT_TSTP, &mask_tmp);
 
         printf("shell> ");
         l = readcmd();
@@ -81,6 +81,7 @@ int main() {
         /* If input stream closed, normal termination */
         if (!l) {
             printf("exit\n");
+            endjob();
             exit(0);
         }
         if (l->err) {
@@ -109,21 +110,22 @@ int main() {
 
             if (!strcmp(l->seq[0][0], "quit")) {
                 printf("exit\n");
+                endjob();
                 exit(0);
             }
 
             if (l->in) {
-                new_in = open(l->in, O_RDONLY);
+                new_in = Open(l->in, O_RDONLY, 0);
                 if (new_in == -1) {
                     fprintf(stderr, "Error: %s: %s\n", l->in, strerror(errno));
-                    exit(1);
+                    continue;
                 }
             }
             if (l->out) {
-                new_out = open(l->out, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+                new_out = Open(l->out, O_TRUNC | O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
                 if (new_out == -1) {
                     fprintf(stderr, "Error: %s: %s\n", l->out, strerror(errno));
-                    exit(1);
+                    continue;
                 }
             }
 
@@ -132,29 +134,35 @@ int main() {
                 cmd = l->seq[i];
                 if (!strcmp(cmd[0], "quit")) {
                     printf("exit\n");
-                    for (i = 0; p[i].pid != 0; i++) {
-                        if (p[i].etat != 0) {
-                            kill(p[i].pid, SIGKILL);
+                    process *test_prc = tab_process->head;
+                    while (test_prc!=NULL){
+                        if (test_prc->etat != 0) {
+                            Kill(test_prc->pid, SIGKILL);
                         }
+                        test_prc=test_prc->next;
                     }
+                    endjob();
                     exit(0);
                 }
 
                 if (i == 0 && l->seq[i + 1] == NULL) {             //si c'est le premier element de la sequence et le dernier
-                    Aucun_pipe(cmd, new_in, new_out, p, bg);
+                    Aucun_pipe(cmd, new_in, new_out, bg);
                 } else if (l->seq[i + 1] != NULL) {               //si c'est pas le dernier
-                    Debut_Milieu(i, cmd, MatPipe, new_in, p, bg);
+                    Debut_Milieu(i, cmd, MatPipe, new_in, bg);
                 } else {                                          //c'est une fin
-                    Fin(i, cmd, MatPipe, new_out, p, bg);
+                    Fin(i, cmd, MatPipe, new_out, bg);
                 }
             }
+
             //tant que tous les processus au premier plan ne sont pas termines
             while (1) {
                 int is_done = 1;
-                for (i = 0; i < nb_prc; i++) {
-                    if (p[i].etat > 0) {
+                process *test_prc = tab_process->head;
+                while (test_prc!=NULL){
+                    if (test_prc->etat > 0) {
                         is_done = 0;
                     }
+                    test_prc=test_prc->next;
                 }
                 if (is_done == 1) {
                     break;
@@ -168,12 +176,12 @@ int main() {
                     // ici on ne ferme la sortie du tube car l'entré est fermée avant
                     Close(MatPipe[i][0]);
                 }
-                for (i = 0; l->seq[i] != NULL; i++) {
-                    free(MatPipe[i]);
+                for (i = 0; l->seq[i+1] != NULL; i++) {
+                    Free(MatPipe[i]);
                 }
-                free(MatPipe);
+                Free(MatPipe);
             }
         }
     }
-    free(p);
+    endjob();
 }

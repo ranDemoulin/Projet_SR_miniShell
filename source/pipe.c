@@ -6,7 +6,7 @@ sigset_t mask_vide, mask_all, mask_INT_TSTP, mask_CHLD, mask_tmp;
 int nb_prc;
 
 //fonction pour 0 pipe
-void Aucun_pipe(char **cmd, int new_in, int new_out, process *tab_process, int background){
+void Aucun_pipe(char **cmd, int new_in, int new_out, int background){
     pid_t pid;
     // On debloque les CTRL C et Z
     Sigprocmask(SIG_UNBLOCK,&mask_INT_TSTP,NULL);
@@ -33,11 +33,11 @@ void Aucun_pipe(char **cmd, int new_in, int new_out, process *tab_process, int b
     }
     // Mise en liste du job
     Sigprocmask(SIG_BLOCK, &mask_all, NULL);
-    addjob(pid, tab_process, background);
+    addjob(pid, background);
     Sigprocmask(SIG_SETMASK, &mask_tmp, NULL); // On debloque SIGCHLD
 }
 
-void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, process *tab_process, int background){
+void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, int background){
     pid_t pid;
     
     // On debloque les CTRL C et Z
@@ -69,13 +69,13 @@ void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, process *tab_proce
     }
     // Mise en liste du job
     Sigprocmask(SIG_BLOCK, &mask_all, NULL);
-    addjob(pid, tab_process, background);
+    addjob(pid, background);
     Sigprocmask(SIG_SETMASK, &mask_tmp, NULL); // On debloque SIGCHLD
 
     Close(MatPipe[i][1]); //on ferme l'ecriture du pipe
 }
 
-void Fin(int i,char **cmd,int** MatPipe, int new_out ,process *tab_process, int background){
+void Fin(int i,char **cmd,int** MatPipe, int new_out, int background){
     pid_t pid;
 
     // On debloque les CTRL C et Z
@@ -97,6 +97,6 @@ void Fin(int i,char **cmd,int** MatPipe, int new_out ,process *tab_process, int 
     }
     // Mise en liste du job
     Sigprocmask(SIG_BLOCK, &mask_all, NULL);
-    addjob(pid, tab_process, background);
+    addjob(pid, background);
     Sigprocmask(SIG_SETMASK, &mask_tmp, NULL); // On debloque SIDCHLD
 }

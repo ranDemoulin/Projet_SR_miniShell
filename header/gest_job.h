@@ -10,16 +10,25 @@
 // 1: le processus est en pause
 // 0: le processus est termine
 // si le processus est en arriere plan on affiche l'etat en negatif
-typedef struct process {
+typedef struct process_ {
     pid_t pid;
     int etat;
+    struct process_ *next;
 } process;
 
+typedef struct L_process_ {
+    process* head;
+} L_process;
 
-void addjob(pid_t pid, process *tab_process , int bg);
 
-void removejob(pid_t pid, process *tab_process);
+// void addjob(pid_t pid, process *tab_process , int bg);
+void addjob(pid_t pid, int bg);
 
-void initjob(process *tab_process);
+// void removejob(pid_t pid, process *tab_process);
+void removejob(pid_t pid);
+
+void initjob();
+
+void endjob();
 
 #endif
