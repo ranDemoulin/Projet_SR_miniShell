@@ -4,8 +4,8 @@
 #include "csapp.h"
 #include "pipe.h"
 
-sigset_t vide, masque_INT_TSTP;
-
+sigset_t mask_vide, mask_all, mask_INT_TSTP, mask_CHLD, mask_tmp;
+int nb_prc;
 process *p;
 
 void CTRL_C_handler(int sig){
@@ -29,13 +29,16 @@ void CTRL_Z_handler(int sig){
 void child_handler(int sig){
     int status;
     pid_t pid;
-    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+    while ((pid = waitpid(-1, &status,WNOHANG)) > 0) {
         //actualiser le tableau de processus
-        for (int i = 0; p[i].pid != 0; i++) {
+        Sigprocmask(SIG_BLOCK, &mask_all, &mask_tmp);
+        for (int i = 0; i < nb_prc; i++) {
             if (p[i].pid == pid) {
+                nb_prc--;
                 p[i].etat = 0;
             }
         }
+        Sigprocmask(SIG_SETMASK, &mask_tmp, NULL);
     }
     if (errno != ECHILD && errno != EXIT_SUCCESS)
         unix_error("waitpid error");
@@ -43,17 +46,29 @@ void child_handler(int sig){
 
 
 int main() {
-    // Signal(SIGINT,CTRL_C_handler);
-    // Signal(SIGTSTP,CTRL_C_handler);
 
-    sigemptyset(&vide);
-    sigemptyset(&masque_INT_TSTP);
-    sigaddset(&masque_INT_TSTP,SIGINT);
-    sigaddset(&masque_INT_TSTP,SIGTSTP);
+    nb_prc=0;
+
+    Sigemptyset(&mask_vide);
+    Sigfillset(&mask_all);
+
+    Sigemptyset(&mask_INT_TSTP);
+    Sigaddset(&mask_INT_TSTP,SIGINT);
+    Sigaddset(&mask_INT_TSTP,SIGTSTP);
+
+    Sigemptyset(&mask_CHLD);
+    Sigaddset(&mask_CHLD, SIGCHLD);
 
     Signal(SIGINT, CTRL_C_handler);
     Signal(SIGTSTP, CTRL_Z_handler);
     Signal(SIGCHLD, child_handler);
+
+            // Initialisation du tableau de processus (jobs)
+            p = malloc(100 * sizeof(process));
+            for (int i = 0; i < 100; i++) {
+                p[i].pid = 0;
+                p[i].etat = 0;
+            }
 
     while (1) {
         struct cmdline *l;
@@ -62,7 +77,7 @@ int main() {
         int is_pipe = 0;
         int **MatPipe; //on va stocker les pipes dans un tableau
 
-        sigprocmask(SIG_BLOCK, &masque_INT_TSTP, &vide);
+        sigprocmask(SIG_BLOCK, &mask_INT_TSTP, &mask_tmp);
 
         printf("shell> ");
         l = readcmd();
@@ -80,27 +95,22 @@ int main() {
         if (l->background) {
             bg = 1;
         }
-        // printf("yes: %d\n", bg);
         
+        // Vérifie qu'il y a bien une commande
         if (l->seq[0]) {
 
-            for (j = 0; l->seq[j] != NULL; j++) { //on compte le nombre de commandes
-            }
+            //on compte le nombre de commandes
+            for (j = 0; l->seq[j] != NULL; j++);
+
+            // allocation de la memoire pour le tableau de pipes
             if (j > 1) {
                 is_pipe = 1;
-                // allocation de la memoire pour le tableau de pipes
                 MatPipe = malloc(j * sizeof(int *));
                 for (i = 0; i < j; i++) {
                     MatPipe[i] = malloc(2 * sizeof(int));
                 }
             }
 
-            // Initialisation du tableau de processus (jobs)
-            p = malloc(j * sizeof(process));
-            for (i = 0; i < j; i++) {
-                p[i].pid = 0;
-                p[i].etat = 0;
-            }
 
             if (!strcmp(l->seq[0][0], "quit")) {
                 printf("exit\n");
@@ -130,9 +140,9 @@ int main() {
                     is_pipe = 1;
                 }
 
-                if (i == 0 && l->seq[i + 1] == NULL) {                 //si c'est le premier element de la sequence et le dernier
+                if (i == 0 && l->seq[i + 1] == NULL) {             //si c'est le premier element de la sequence et le dernier
                     Aucun_pipe(cmd, new_in, new_out, p, bg);
-                } else if (l->seq[i + 1] != NULL) {                   //si c'est pas le dernier
+                } else if (l->seq[i + 1] != NULL) {               //si c'est pas le dernier 
                     Debut_Milieu(i, cmd, MatPipe, new_in, p, bg);
                 } else {                                          //c'est une fin
                     Fin(i, cmd, MatPipe, new_out, p, bg);
@@ -147,10 +157,18 @@ int main() {
                 }
             }
 
+            //on libere la memoire
+            if (is_pipe != 0) {
+                for (i = 0; l->seq[i] != NULL; i++) {
+                    free(MatPipe[i]);
+                }
+                free(MatPipe);
+            }
+
             //tant que tous les processus au premier plan ne sont pas termines
             while (1) {
                 int is_done = 1;
-                for (i = 0; p[i].pid != 0; i++) {
+                for (i = 0; i < nb_prc; i++) {
                     if (p[i].etat > 0) {
                         is_done = 0;
                     }
@@ -158,14 +176,6 @@ int main() {
                 if (is_done == 1) {
                     break;
                 }
-            }
-
-            //on libere la memoire
-            if (is_pipe != 0) {
-                for (i = 0; l->seq[i] != NULL; i++) {
-                    free(MatPipe[i]);
-                }
-                free(MatPipe);
             }
         }
     }
