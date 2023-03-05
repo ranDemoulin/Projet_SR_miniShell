@@ -9,7 +9,7 @@
 //  2: le processus est en cours d'execution
 // -1: le processus est en pause
 //  0: le processus est termine
-// si le processus est en arriere plan on affiche l'etat en negatif
+// si le processus est en arriere plan on affiche l'etat en cours d'execution en negatif
 typedef struct process_ {
     pid_t pid;
     int etat;
