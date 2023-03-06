@@ -219,6 +219,7 @@ int main() {
                     }
                     fprintf(stdout,"All stoped process are now in fore-ground\n");
                 }
+                Sigprocmask(SIG_SETMASK, &mask_tmp, NULL);
                 test_est_interne = 1;
             }
 

@@ -61,7 +61,11 @@ void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, int background){
             }
         }
         if (execvp(cmd[0], cmd) == -1) {
-            fprintf(stderr, "Error: %s: %s\n", cmd[i], strerror(errno));
+            if (errno == ENOENT){
+                fprintf(stderr, "Error: %s: command not found\n", cmd[0]);
+            }else{
+                fprintf(stderr, "Error: %s: %s\n", cmd[0], strerror(errno));
+            }
             exit(1);
         }
     }
@@ -89,7 +93,11 @@ void Fin(int i,char **cmd,int** MatPipe, int new_out, int background){
         }
         Dup2(MatPipe[i-1][0], 0); //on redirige l'entree standard vers la sortie du pipe
         if (execvp(cmd[0], cmd) == -1) {
-            fprintf(stderr, "Error: %s: %s\n", cmd[0], strerror(errno));
+            if (errno == ENOENT){
+                fprintf(stderr, "Error: %s: command not found\n", cmd[0]);
+            }else{
+                fprintf(stderr, "Error: %s: %s\n", cmd[0], strerror(errno));
+            }
             exit(1);
         }
     }
