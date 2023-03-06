@@ -1,0 +1,6 @@
+#
+# test13.txt - Tester une commande stoppé puis réactiver en arrière plan
+#
+sleep 20 
+TSTP
+bg

@@ -1,0 +1,6 @@
+#
+# test12.txt - Tester une commande stoppé puis réactiver en premier plan
+#
+sleep 20 
+TSTP
+fg

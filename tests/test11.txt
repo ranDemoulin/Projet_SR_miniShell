@@ -1,0 +1,6 @@
+#
+# test11.txt - Tester une commande interrompu
+#
+sleep 20 
+INT
+ls

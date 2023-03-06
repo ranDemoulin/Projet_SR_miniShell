@@ -66,6 +66,6 @@ void endjob(){
             current_prc=current_prc->next;
             Free(tmp);
         }
-        Free(tab_process);
     }
+    Free(tab_process);
 }

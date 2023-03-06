@@ -5,11 +5,12 @@
 #include "csapp.h"
 #include "pipe.h"
 
+//////////////////////////////////// Les variables globals ////////////////////////////////////
 extern sigset_t mask_vide, mask_all, mask_INT_TSTP, mask_CHLD, mask_tmp;
 extern int nb_prc;
 extern L_process *tab_process;
-// pid_t last_pid;
 
+////////////////// Définition d'une fonction pour free la ligne de commande //////////////////////////////
 void free_l(struct cmdline *l){
     Free(l->in);
     Free(l->out);
@@ -24,8 +25,11 @@ void free_l(struct cmdline *l){
     Free(l);
 }
 
+//////////////////////////////////////// Définition des handlers ////////////////////////////////////////
 void CTRL_C_handler(int sig){
     process *test_prc = tab_process->head;
+    // On bloque les signaux pour que le while se passe sans problème
+    Sigprocmask(SIG_BLOCK, &mask_all, &mask_tmp);
     while (test_prc!=NULL){
         if (test_prc->etat == 2) {
             Kill(test_prc->pid, SIGINT);
@@ -33,10 +37,13 @@ void CTRL_C_handler(int sig){
         }
         test_prc=test_prc->next;
     }
+    Sigprocmask(SIG_SETMASK, &mask_tmp, NULL);
 }
 
 void CTRL_Z_handler(int sig){
     process *test_prc = tab_process->head;
+    // On bloque les signaux pour que le while se passe sans problème
+    Sigprocmask(SIG_BLOCK, &mask_all, &mask_tmp);
     while (test_prc!=NULL){
         if (test_prc->etat == 2) {
             Kill(test_prc->pid, SIGTSTP);
@@ -44,6 +51,7 @@ void CTRL_Z_handler(int sig){
         }
         test_prc=test_prc->next;
     }
+    Sigprocmask(SIG_SETMASK, &mask_tmp, NULL);
 }
 
 void child_handler(int sig){
@@ -60,6 +68,7 @@ void child_handler(int sig){
 }
 
 
+//////////////////////////////////////// Initialisation du shell ////////////////////////////////////////
 int main() {
     int exit_status = -1;
     nb_prc=0;
@@ -80,7 +89,7 @@ int main() {
 
     initjob();
 
-
+/////////////////////////////////////////// Début du shell ///////////////////////////////////////////
     while (exit_status == -1) {
         struct cmdline *l;
         int i, j, new_in = 0, new_out = 0, bg = 0;
@@ -145,7 +154,7 @@ int main() {
             // on n'a fait une fonction interne
             int test_est_interne = 0;
 
-            // Fonction interne quit
+        /////// Fonction interne quit
             if (!strcmp(l->seq[0][0], "quit")) {
                 printf("exit\n");
                 exit_status = 0;
@@ -153,7 +162,7 @@ int main() {
                 continue;
             }
 
-            ////// Fonction interne bg
+        ////// Fonction interne bg
             if (!strcmp(l->seq[0][0], "bg")) {
                 int test_find = 0;
                 process *test_prc = tab_process->head;
@@ -182,14 +191,14 @@ int main() {
                 test_est_interne = 1;
             }
 
-            ////// Fonction interne fg
+        ////// Fonction interne fg
             if (!strcmp(l->seq[0][0], "fg")) {
                 int test_find = 0;
                 process *test_prc = tab_process->head;
                 if (l->seq[0][1]) {
                     Sigprocmask(SIG_BLOCK, &mask_all, &mask_tmp);
                     while (test_prc!=NULL){
-                        if (test_prc->etat == (pid_t)strtol(l->seq[0][1], NULL, 10)) {
+                        if (test_prc->pid == (pid_t)strtol(l->seq[0][1], NULL, 10)) {
                             Kill(test_prc->pid, SIGCONT);
                             test_prc->etat = 2;
                             test_find = 1;
@@ -267,6 +276,14 @@ int main() {
                 Free(MatPipe);
             }
         }
+    }
+    //// Action de fin de shell
+    process *test_prc = tab_process->head;
+    while (test_prc!=NULL){
+        if (test_prc->etat != 0) {
+            Kill(test_prc->pid, SIGINT);
+        }
+        test_prc=test_prc->next;
     }
     endjob();
     exit(exit_status);
