@@ -9,6 +9,20 @@ extern sigset_t mask_vide, mask_all, mask_INT_TSTP, mask_CHLD, mask_tmp;
 extern int nb_prc;
 extern L_process *tab_process;
 
+void free_l(struct cmdline *l){
+    free(l->in);
+    free(l->out);
+    free(l->err);
+    for (int i=0; l->seq[i]!=NULL; i++){
+        for (int j=0; l->seq[i][j]!=NULL; j++){
+            free(l->seq[i][j]);
+        }
+        free(l->seq[i]);
+    }
+    free(l->seq);
+    free(l);
+}
+
 void CTRL_C_handler(int sig){
     process *test_prc = tab_process->head;
     while (test_prc!=NULL){
@@ -111,6 +125,7 @@ int main() {
             if (!strcmp(l->seq[0][0], "quit")) {
                 printf("exit\n");
                 endjob();
+                free_l(l);
                 exit(0);
             }
 
@@ -142,6 +157,7 @@ int main() {
                         test_prc=test_prc->next;
                     }
                     endjob();
+                    free_l(l);
                     exit(0);
                 }
 
@@ -187,5 +203,4 @@ int main() {
             }
         }
     }
-    endjob();
 }
