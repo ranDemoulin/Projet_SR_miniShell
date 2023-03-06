@@ -1,3 +1,9 @@
 #
-# test14.txt - Tester 
+# test14.txt - Tester si le changement de plan casse la gestion des signaux SIGTSTP
 #
+sleep 30
+TSTP
+fg
+TSTP
+bg
+WAIT

@@ -1,3 +1,8 @@
 #
-# test15.txt - Tester 
+# test15.txt - Tester si le changement de plan casse la gestion des signaux SIGINT
 #
+sleep 30
+TSTP
+fg
+INT
+ps

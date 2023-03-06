@@ -4,3 +4,4 @@
 sleep 20 
 TSTP
 fg
+WAIT
