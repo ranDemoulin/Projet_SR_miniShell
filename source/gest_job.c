@@ -21,16 +21,14 @@ void removejob(pid_t pid){
     if (tab_process->head != NULL){
         process *current_prc = tab_process->head; 
         process *prev_prc = NULL; 
-        while (current_prc != NULL) {
-            if (current_prc->pid == pid) {
-                if(prev_prc == NULL){
-                    tab_process->head = current_prc->next;
-                }else{
+        while (current_prc != NULL) { //parcours de la liste
+            if (current_prc->pid == pid) { //si le pid correspond
+                if(prev_prc == NULL){ //si c'est le premier element
+                    tab_process->head = current_prc->next; //on le supprime
+                }else{ //sinon on supprime l'element
                     prev_prc->next = current_prc->next;
-                    current_prc->pid=0;
-                    current_prc->etat=0;
                 }
-                free(current_prc);
+                Free(current_prc); //on libere la memoire
                 nb_prc--;
                 break;
             }
@@ -55,7 +53,7 @@ int  exist_prc_fg(){
 
 
 void initjob(){
-    tab_process = malloc(100 * sizeof(tab_process));
+    tab_process = Malloc(sizeof(tab_process));
     tab_process->head = NULL;
 }
 

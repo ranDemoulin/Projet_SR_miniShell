@@ -11,17 +11,17 @@ extern L_process *tab_process;
 // pid_t last_pid;
 
 void free_l(struct cmdline *l){
-    free(l->in);
-    free(l->out);
-    free(l->err);
+    Free(l->in);
+    Free(l->out);
+    Free(l->err);
     for (int i=0; l->seq[i]!=NULL; i++){
         for (int j=0; l->seq[i][j]!=NULL; j++){
-            free(l->seq[i][j]);
+            Free(l->seq[i][j]);
         }
-        free(l->seq[i]);
+        Free(l->seq[i]);
     }
-    free(l->seq);
-    free(l);
+    Free(l->seq);
+    Free(l);
 }
 
 void CTRL_C_handler(int sig){

@@ -40,11 +40,10 @@ void Debut_Milieu(int i,char **cmd,int** MatPipe, int new_in, int background){
     pid_t pid;
     
     // On debloque les CTRL C et Z
-    sigprocmask(SIG_UNBLOCK,&mask_INT_TSTP,NULL);
+    Sigprocmask(SIG_UNBLOCK,&mask_INT_TSTP,NULL);
 
     // Création tube
     pipe(MatPipe[i]);
-    printf("indice %d, lecture %d, ecriture %d\n",i,MatPipe[i][0],MatPipe[i][1]);
 
      // On bloque SIDCHLD
     Sigprocmask(SIG_BLOCK, &mask_CHLD, &mask_tmp);
@@ -78,7 +77,7 @@ void Fin(int i,char **cmd,int** MatPipe, int new_out, int background){
     pid_t pid;
 
     // On debloque les CTRL C et Z
-    sigprocmask(SIG_UNBLOCK,&mask_INT_TSTP,NULL);
+    Sigprocmask(SIG_UNBLOCK,&mask_INT_TSTP,NULL);
 
     // On bloque SIDCHLD
     Sigprocmask(SIG_BLOCK, &mask_CHLD, &mask_tmp);
