@@ -5,10 +5,24 @@
 #include "csapp.h"
 #include "pipe.h"
 
-sigset_t mask_vide, mask_all, mask_INT_TSTP, mask_CHLD, mask_tmp;
-int nb_prc;
-L_process *tab_process;
-pid_t last_pid;
+extern sigset_t mask_vide, mask_all, mask_INT_TSTP, mask_CHLD, mask_tmp;
+extern int nb_prc;
+extern L_process *tab_process;
+// pid_t last_pid;
+
+void free_l(struct cmdline *l){
+    free(l->in);
+    free(l->out);
+    free(l->err);
+    for (int i=0; l->seq[i]!=NULL; i++){
+        for (int j=0; l->seq[i][j]!=NULL; j++){
+            free(l->seq[i][j]);
+        }
+        free(l->seq[i]);
+    }
+    free(l->seq);
+    free(l);
+}
 
 void CTRL_C_handler(int sig){
     process *test_prc = tab_process->head;
@@ -47,7 +61,7 @@ void child_handler(int sig){
 
 
 int main() {
-    int exit_status;
+    int exit_status = -1;
     nb_prc=0;
 
     Sigemptyset(&mask_vide);
@@ -67,7 +81,7 @@ int main() {
     initjob();
 
 
-    while (1) {
+    while (exit_status == -1) {
         struct cmdline *l;
         int i, j, new_in = 0, new_out = 0, bg = 0;
         char **cmd;
@@ -83,7 +97,7 @@ int main() {
         if (!l) {
             printf("exit\n");
             exit_status = 0;
-            break;
+            continue;
         }
         if (l->err) {
             /* Syntax error, read another command */
@@ -94,7 +108,8 @@ int main() {
             bg = 1;
         }
         
-        // Vérifie qu'il y a bien une commande
+//////////////////////// Début de la gastion des commande ////////////////////////
+        //Vérifie qu'il y a bien une commande
         if (l->seq[0]) {
 
             //on compte le nombre de commandes
@@ -109,22 +124,7 @@ int main() {
                 }
             }
 
-            if (!strcmp(l->seq[0][0], "quit")) {
-                printf("exit\n");
-                exit_status = 0;
-                break;
-            }
-            if (!strcmp(l->seq[0][0], "bg")) {
-                if (!l->seq[0][1]) {
-                }
-                
-            }
-            if (!strcmp(l->seq[0][0], "fg")) {
-                if (!l->seq[0][1]) {
-                }
-                
-            }
-
+//////////////////////////////// Redirection S/E ////////////////////////////////
             if (l->in) {
                 new_in = Open(l->in, O_RDONLY, 0);
                 if (new_in == -1) {
@@ -140,50 +140,120 @@ int main() {
                 }
             }
 
+/////////////////////////////// Fonctions interne ////////////////////////////////
+            // Variable pour ne pas aussi faire la partie fonction externe si 
+            // on n'a fait une fonction interne
+            int test_est_interne = 0;
 
-            for (i = 0; l->seq[i] != NULL; i++) {
-                cmd = l->seq[i];
-                if (!strcmp(cmd[0], "quit")) {
-                    printf("exit\n");
-                    process *test_prc = tab_process->head;
+            // Fonction interne quit
+            if (!strcmp(l->seq[0][0], "quit")) {
+                printf("exit\n");
+                exit_status = 0;
+                free_l(l);
+                continue;
+            }
+
+            ////// Fonction interne bg
+            if (!strcmp(l->seq[0][0], "bg")) {
+                int test_find = 0;
+                process *test_prc = tab_process->head;
+                if (l->seq[0][1]) {
                     while (test_prc!=NULL){
-                        if (test_prc->etat != 0) {
-                            Kill(test_prc->pid, SIGINT);
+                        if (test_prc->pid == (pid_t)strtol(l->seq[0][1], NULL, 10)) {
+                            Kill(test_prc->pid, SIGCONT);
+                            test_prc->etat = -2;
+                            test_find = 1;
                         }
                         test_prc=test_prc->next;
                     }
-                    exit_status = 0;
-                    break;
-                }
-
-                if (i == 0 && l->seq[i + 1] == NULL) {             //si c'est le premier element de la sequence et le dernier
-                    Aucun_pipe(cmd, new_in, new_out, bg);
-                } else if (l->seq[i + 1] != NULL) {               //si c'est pas le dernier
-                    Debut_Milieu(i, cmd, MatPipe, new_in, bg);
-                } else {                                          //c'est une fin
-                    Fin(i, cmd, MatPipe, new_out, bg);
-                }
-            }
-
-            //tant que tous les processus au premier plan ne sont pas termines
-            while (1) {
-                int is_done = 1;
-                process *test_prc = tab_process->head;
-
-                // On bloque SIGCHLD pour eviter que le test se fasse sans problème (libération du process entre whie et if)
-                Sigprocmask(SIG_BLOCK, &mask_CHLD, &mask_tmp);
-                while (test_prc!=NULL){ 
-                    if (test_prc->etat > 0) {
-                        is_done = 0;
+                    if(!test_find){
+                        fprintf(stderr,"Error : there is no process of PID %d\n",(pid_t)strtol(l->seq[0][1], NULL, 10));
                     }
-                    test_prc=test_prc->next;
+                }else{
+                    while (test_prc!=NULL){
+                        if (test_prc->etat == -1) {
+                            Kill(test_prc->pid, SIGCONT);
+                            test_prc->etat = -2;
+                        }
+                        test_prc=test_prc->next;
+                    }
+                    fprintf(stdout,"All stoped process are now in back-ground\n");
                 }
-                Sigprocmask(SIG_SETMASK, &mask_tmp, NULL);   
-                if (is_done == 1) {
-                    break;
+                test_est_interne = 1;
+            }
+
+            ////// Fonction interne fg
+            if (!strcmp(l->seq[0][0], "fg")) {
+                int test_find = 0;
+                process *test_prc = tab_process->head;
+                if (l->seq[0][1]) {
+                    Sigprocmask(SIG_BLOCK, &mask_all, &mask_tmp);
+                    while (test_prc!=NULL){
+                        if (test_prc->etat == (pid_t)strtol(l->seq[0][1], NULL, 10)) {
+                            Kill(test_prc->pid, SIGCONT);
+                            test_prc->etat = 2;
+                            test_find = 1;
+                        }
+                        test_prc=test_prc->next;
+                    }
+                    if(!test_find){
+                        fprintf(stderr,"Error : there is no process of PID %d\n",(pid_t)strtol(l->seq[0][1], NULL, 10));
+                    }
+                    Sigprocmask(SIG_SETMASK, &mask_tmp, NULL);
+                }else{
+                    while (test_prc!=NULL){
+                        if (test_prc->etat == -1) {
+                            Kill(test_prc->pid, SIGCONT);
+                            test_prc->etat = 2;
+                        }
+                        test_prc=test_prc->next;
+                    }
+                    fprintf(stdout,"All stoped process are now in fore-ground\n");
+                }
+                test_est_interne = 1;
+            }
+
+
+////////////////////////// Gestion des fonctions externe et pipe ////////////////////////// 
+            if (!test_est_interne){
+                for (i = 0; l->seq[i] != NULL; i++) {
+                    cmd = l->seq[i];
+                    if (!strcmp(cmd[0], "quit")) {
+                        printf("exit\n");
+                        process *test_prc = tab_process->head;
+                        while (test_prc!=NULL){
+                            if (test_prc->etat != 0) {
+                                Kill(test_prc->pid, SIGINT);
+                            }
+                            test_prc=test_prc->next;
+                        }
+                        endjob();
+                        free_l(l);
+                        exit_status = 0;
+                        break;
+                    }
+
+                    if (i == 0 && l->seq[i + 1] == NULL) {             //si c'est le premier element de la sequence et le dernier
+                        Aucun_pipe(cmd, new_in, new_out, bg);
+                    } else if (l->seq[i + 1] != NULL) {               //si c'est pas le dernier
+                        Debut_Milieu(i, cmd, MatPipe, new_in, bg);
+                    } else {                                          //c'est une fin
+                        Fin(i, cmd, MatPipe, new_out, bg);
+                    }
                 }
             }
 
+////////////// Attente des processus en premier plan ///////////////////////////////////////
+            int test_exist_fg = 1;
+            while (test_exist_fg){
+                // On bloque les signaux pour que le test dans "exist_prc_fg()"
+                // se fasse sans problème (libération du process entre while et if)
+                Sigprocmask(SIG_BLOCK, &mask_all, &mask_tmp);
+                test_exist_fg = exist_prc_fg();
+                Sigprocmask(SIG_SETMASK, &mask_tmp, NULL);
+            }
+
+////////////////////// Libération des tubes ////////////////////////////////////////////////
             //on libere la memoire
             if (is_pipe != 0) {
                 //on ferme tout les pipes

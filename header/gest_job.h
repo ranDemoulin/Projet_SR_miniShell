@@ -27,6 +27,8 @@ void addjob(pid_t pid, int bg);
 // void removejob(pid_t pid, process *tab_process);
 void removejob(pid_t pid);
 
+int  exist_prc_fg();
+
 void initjob();
 
 void endjob();

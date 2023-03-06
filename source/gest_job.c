@@ -24,7 +24,7 @@ void removejob(pid_t pid){
         while (current_prc != NULL) {
             if (current_prc->pid == pid) {
                 if(prev_prc == NULL){
-                    tab_process->head = NULL;
+                    tab_process->head = current_prc->next;
                 }else{
                     prev_prc->next = current_prc->next;
                     current_prc->pid=0;
@@ -39,6 +39,20 @@ void removejob(pid_t pid){
         }
     }
 }
+
+
+int  exist_prc_fg(){
+    int is_done = 0;
+    process *test_prc = tab_process->head;
+    while (test_prc!=NULL){ 
+        if (test_prc->etat > 0) {
+            is_done = 1;
+        }
+        test_prc=test_prc->next;
+    }
+    return is_done;
+}
+
 
 void initjob(){
     tab_process = malloc(100 * sizeof(tab_process));
