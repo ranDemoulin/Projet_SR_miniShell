@@ -219,7 +219,6 @@ int main() {
                     }
                     fprintf(stdout,"All stoped process are now in fore-ground\n");
                 }
-                Sigprocmask(SIG_SETMASK, &mask_tmp, NULL);
                 test_est_interne = 1;
             }
 
@@ -237,7 +236,6 @@ int main() {
                             }
                             test_prc=test_prc->next;
                         }
-                        endjob();
                         free_l(l);
                         exit_status = 0;
                         break;
@@ -286,6 +284,7 @@ int main() {
         }
         test_prc=test_prc->next;
     }
+
     endjob();
     exit(exit_status);
 }
