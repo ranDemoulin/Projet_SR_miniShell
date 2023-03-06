@@ -1,0 +1,4 @@
+#
+# fonction avec quit dans un pipe
+#
+ls | quit
