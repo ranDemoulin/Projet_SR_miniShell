@@ -3,7 +3,6 @@
 #include "pipe.h"
 
 sigset_t mask_vide, mask_all, mask_INT_TSTP, mask_CHLD, mask_tmp;
-int nb_prc;
 
 //fonction pour 0 pipe
 void Aucun_pipe(char **cmd, int new_in, int new_out, int background){

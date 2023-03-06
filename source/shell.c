@@ -8,6 +8,7 @@
 sigset_t mask_vide, mask_all, mask_INT_TSTP, mask_CHLD, mask_tmp;
 int nb_prc;
 L_process *tab_process;
+pid_t last_pid;
 
 void CTRL_C_handler(int sig){
     process *test_prc = tab_process->head;
@@ -46,7 +47,7 @@ void child_handler(int sig){
 
 
 int main() {
-
+    int exit_status;
     nb_prc=0;
 
     Sigemptyset(&mask_vide);
@@ -81,8 +82,8 @@ int main() {
         /* If input stream closed, normal termination */
         if (!l) {
             printf("exit\n");
-            endjob();
-            exit(0);
+            exit_status = 0;
+            break;
         }
         if (l->err) {
             /* Syntax error, read another command */
@@ -110,8 +111,18 @@ int main() {
 
             if (!strcmp(l->seq[0][0], "quit")) {
                 printf("exit\n");
-                endjob();
-                exit(0);
+                exit_status = 0;
+                break;
+            }
+            if (!strcmp(l->seq[0][0], "bg")) {
+                if (!l->seq[0][1]) {
+                }
+                
+            }
+            if (!strcmp(l->seq[0][0], "fg")) {
+                if (!l->seq[0][1]) {
+                }
+                
             }
 
             if (l->in) {
@@ -137,12 +148,12 @@ int main() {
                     process *test_prc = tab_process->head;
                     while (test_prc!=NULL){
                         if (test_prc->etat != 0) {
-                            Kill(test_prc->pid, SIGKILL);
+                            Kill(test_prc->pid, SIGINT);
                         }
                         test_prc=test_prc->next;
                     }
-                    endjob();
-                    exit(0);
+                    exit_status = 0;
+                    break;
                 }
 
                 if (i == 0 && l->seq[i + 1] == NULL) {             //si c'est le premier element de la sequence et le dernier
@@ -188,4 +199,5 @@ int main() {
         }
     }
     endjob();
+    exit(exit_status);
 }
