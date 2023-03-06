@@ -5,9 +5,9 @@
 #include "csapp.h"
 #include "pipe.h"
 
-sigset_t mask_vide, mask_all, mask_INT_TSTP, mask_CHLD, mask_tmp;
-int nb_prc;
-L_process *tab_process;
+extern sigset_t mask_vide, mask_all, mask_INT_TSTP, mask_CHLD, mask_tmp;
+extern int nb_prc;
+extern L_process *tab_process;
 
 void CTRL_C_handler(int sig){
     process *test_prc = tab_process->head;
